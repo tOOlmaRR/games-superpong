@@ -1,4 +1,4 @@
-#Super Pong
+# Super Pong
 ## Summary
 A simple Pong game built in HTML5 and JavaScript, used as a base to build a "Super" Pong game. At the moment, the game continues until a player wins 3 matches.
 
