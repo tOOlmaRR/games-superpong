@@ -1,0 +1,178 @@
+<html>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        var canvas;
+        var canvasContext;
+        var ballX = 50;
+        var ballY = 50;
+        var ballSpeedX = 10;
+        var ballSpeedY = 4;
+        var paddle1Y = 250;
+        var paddle2Y = 250;
+
+        var showingWinScreen = false;
+        
+        var player1Score = 0;
+        var player2Score = 0;
+        const WINNING_SCORE = 3;
+        
+        const PADDLE_HEIGHT = 100;
+        const PADDLE_THICKNESS = 10;
+        
+
+
+        function calculateMousePos(evt) {
+            var rect = canvas.getBoundingClientRect();
+            var root = document.documentElement;
+            var mouseX = evt.clientX - rect.left - root.scrollLeft;
+            var mouseY = evt.clientY - rect.top - root.scrollTop;
+            return {
+                x:mouseX,
+                y:mouseY
+            }
+        }
+
+        function handleMouseClick(evt) {
+            if (showingWinScreen) {
+                player1Score = 0;
+                player2Score = 0;
+                showingWinScreen = false;
+            }
+        }
+
+        window.onload = function() {
+            canvas = document.getElementById("gameCanvas");
+            canvasContext = canvas.getContext("2d");
+
+            // basic animation in frames per second
+            var framesPerSecond = 30;
+            setInterval(function() {
+                moveEverything();
+                drawEverything();
+            }, 1000/framesPerSecond);
+
+            canvas.addEventListener("mousedown", handleMouseClick);
+
+            canvas.addEventListener("mousemove", function(evt) {
+                var mousePos = calculateMousePos(evt);
+                paddle1Y = mousePos.y - (PADDLE_HEIGHT / 2);
+                //paddle2Y = mousePos.y - (PADDLE_HEIGHT / 2);
+            })
+        }
+
+        // ball resets at the very center of playing surface
+        function ballReset() {
+            // determine if a player has won
+            if (player1Score >= WINNING_SCORE || player2Score >= WINNING_SCORE) {
+                showingWinScreen = true;
+            }
+            ballSpeedX = -ballSpeedX;
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+        }
+
+        function computerMovement() {
+            var paddle2YCenter = paddle2Y + (PADDLE_HEIGHT / 2);
+            if (paddle2YCenter < ballY - 35) {
+                paddle2Y += 6;
+            } else if (paddle2YCenter > ballY + 35) {
+                paddle2Y -= 6;
+            }
+        }
+
+        function moveEverything() {
+            if (showingWinScreen) {
+                return;
+            }
+            computerMovement();
+
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // right boundary
+            if (ballX > canvas.width) {
+                // when the ball hits the right paddle
+                if (ballY > paddle2Y && ballY < paddle2Y + PADDLE_HEIGHT) {
+                    ballSpeedX = -ballSpeedX;
+                    var deltaY = ballY - (paddle2Y + PADDLE_HEIGHT / 2);
+                    ballSpeedY = deltaY * 0.35;
+                } else {
+                    // increase score BEFORE resetting the ball so that we can check win condition
+                    player1Score++;
+                    ballReset();
+                }
+            }
+
+            // left boundary
+            if (ballX < 0) {
+                // when the ball hits the left paddle
+                if (ballY > paddle1Y && ballY < paddle1Y + PADDLE_HEIGHT) {
+                    ballSpeedX = -ballSpeedX;
+                    var deltaY = ballY - (paddle1Y + PADDLE_HEIGHT / 2);
+                    ballSpeedY = deltaY * 0.35;
+                } else {
+                    // increase score BEFORE resetting the ball so that we can check win condition
+                    player2Score++;
+                    ballReset();
+                }
+            }
+
+            // upper boundary
+            if (ballY < 0) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            // lower boundary
+            if (ballY > canvas.height) {
+                ballSpeedY = -ballSpeedY;
+            }
+        }
+
+        function drawNet() {
+            for (let i = 0; i < canvas.height; i += 40) {
+                colourRect(canvas.width / 2 - 1, i, 2, 20, "white");
+            }
+        }
+
+        function drawEverything() {
+            // black playing surface
+            colourRect(0, 0, canvas.width, canvas.height, "black");
+
+            if (showingWinScreen) {
+                canvasContext.fillStyle = "white";
+                if (player1Score >= WINNING_SCORE) {
+                    canvasContext.fillText("LEFT Player Won!", 350, 200);
+                } else if (player2Score >= WINNING_SCORE) {
+                    canvasContext.fillText("RIGHT Player Won!", 350, 200);
+                }
+
+                canvasContext.fillText("Click to Continue", 350, 500);
+                return;
+            }
+
+            // draw Net
+            drawNet();
+            // draw left player paddle
+            colourRect(0, paddle1Y, PADDLE_THICKNESS, PADDLE_HEIGHT, "white");
+            // draw right player paddle
+            colourRect(canvas.width - PADDLE_THICKNESS, paddle2Y, PADDLE_THICKNESS, PADDLE_HEIGHT, "white");
+            // draw the ball
+            colourCircle(ballX, ballY, 10, "white")
+            // draw the scores
+            canvasContext.fillText(player1Score, 100, 100);
+            canvasContext.fillText(player2Score, canvas.width - 100, 100);
+        }
+
+        function colourCircle(centerX, centerY, radius, colour) {
+            canvasContext.fillStyle = colour;
+            canvasContext.beginPath();
+            canvasContext.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
+            canvasContext.fill();
+        }
+
+        function colourRect(leftX, topY, width, height, drawColour) {
+            canvasContext.fillStyle = drawColour;
+            canvasContext.fillRect(leftX, topY, width, height);
+        }
+    </script>    
+</html>
